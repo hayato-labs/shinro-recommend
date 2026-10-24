@@ -1,0 +1,653 @@
+<!doctype html>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 1列の「求人票の束」：上から 選ぶ → 10問 → 結果。結果の1件は求人票の欄をまねた小さな表を持つ */
+:root {
+  --bg: #f2f4f6;
+  --card: #ffffff;
+  --ink: #1c2938;
+  --muted: #5a6776;
+  --line: #d3dae2;
+  --accent: #1d5ea8;
+  --accent-soft: #e4eef9;
+  --mark: #ffe066;
+  --warn: #a94a22;
+  --warn-soft: #fbece4;
+  --ok: #2f7a4d;
+  --font-display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161c; --card: #1a212a; --ink: #e5eaf0; --muted: #9ba7b4; --line: #2c3642;
+    --accent: #80b2ee; --accent-soft: #1d2b3c; --mark: rgba(255, 214, 64, .32);
+    --warn: #f0a37e; --warn-soft: #33231b; --ok: #7fcf9e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161c; --card: #1a212a; --ink: #e5eaf0; --muted: #9ba7b4; --line: #2c3642;
+  --accent: #80b2ee; --accent-soft: #1d2b3c; --mark: rgba(255, 214, 64, .32);
+  --warn: #f0a37e; --warn-soft: #33231b; --ok: #7fcf9e; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body);
+  font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+[hidden] { display: none !important; }
+.wrap { max-width: 680px; margin: 0 auto; display: grid; gap: 20px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.4; margin: 0; }
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.3rem; }
+h3 { font-size: 1.12rem; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: .875rem; }
+.eyebrow { font-size: .78rem; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+.hl { background: linear-gradient(transparent 58%, var(--mark) 58%); padding: 0 .1em; }
+.num { font-variant-numeric: tabular-nums; }
+
+.note { border: 1px dashed var(--line); border-radius: var(--r); padding: 10px 14px; font-size: .875rem; color: var(--muted); }
+
+button { font: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible + span, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn { border: 1.5px solid var(--accent); background: var(--card); color: var(--accent); border-radius: 999px; padding: 10px 20px; font-weight: 700; }
+.btn.primary { background: var(--accent); color: var(--card); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.link { border: none; background: none; padding: 4px 0; text-decoration: underline; text-underline-offset: 3px; font-weight: 500; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* はじめの画面 */
+.hero { display: grid; gap: 12px; }
+.paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.path { text-align: left; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: var(--r); padding: 16px 18px; display: grid; gap: 6px; }
+.path:hover { border-color: var(--accent); }
+.path strong { font-family: var(--font-display); font-size: 1.2rem; color: var(--accent); }
+.demo { display: grid; gap: 8px; }
+
+/* 質問 */
+.qhead { display: grid; gap: 6px; }
+.chip { display: inline-block; font-size: .8rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 12px; }
+.sec { display: grid; gap: 14px; }
+.sec > h2 { font-size: 1.05rem; color: var(--muted); }
+fieldset { border: 1px solid var(--line); background: var(--card); border-radius: var(--r); padding: 14px 16px 16px; margin: 0; display: grid; gap: 10px; min-width: 0; }
+legend { padding: 0 6px; font-weight: 700; }
+legend .qn { color: var(--accent); margin-right: .5em; font-family: var(--font-display); }
+legend .topic { font-weight: 500; color: var(--muted); font-size: .85rem; margin-left: .4em; }
+.opts { display: grid; gap: 8px; }
+.opt { position: relative; display: block; }
+.opt input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.opt span { display: block; border: 1.5px solid var(--line); border-radius: 8px; padding: 9px 12px 9px 40px; position: relative; }
+.opt span::before { content: ""; position: absolute; left: 13px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; border: 2px solid var(--muted); box-sizing: border-box; }
+.opt input:checked + span { border-color: var(--accent); background: var(--accent-soft); }
+.opt input:checked + span::before { border-color: var(--accent); background: radial-gradient(var(--accent) 45%, transparent 50%); }
+.qfoot { position: sticky; bottom: 0; padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, var(--bg) 30%); display: grid; gap: 6px; }
+
+/* 結果 */
+.me { background: var(--card); border: 1.5px solid var(--accent); border-radius: var(--r); padding: 18px; display: grid; gap: 8px; }
+.me p.big { font-size: 1.1rem; line-height: 1.85; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.card-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; }
+.card-head > div { min-width: 0; }
+.rank { font-family: var(--font-display); color: var(--accent); margin-right: .3em; }
+.pts { flex: none; font-family: var(--font-display); font-size: 1.05rem; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 8px; padding: 2px 10px; white-space: nowrap; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.fact { padding: 6px 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; min-width: 0; }
+.fact dt { font-size: .72rem; color: var(--muted); letter-spacing: .04em; }
+.fact dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; font-size: .93rem; }
+.block { display: grid; gap: 4px; }
+.block-t { font-size: .8rem; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.why .gap { color: var(--warn); }
+.check { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; counter-reset: c; }
+.check li { position: relative; padding: 8px 12px 8px 38px; border-radius: 8px; background: var(--accent-soft); counter-increment: c; }
+.check li::before { content: counter(c); position: absolute; left: 12px; top: 8px; font-family: var(--font-display); color: var(--accent); font-weight: 700; }
+.check li.diff { background: var(--warn-soft); }
+.check li.diff::before { color: var(--warn); }
+details { font-size: .875rem; color: var(--muted); }
+summary { cursor: pointer; }
+details p { margin-top: 6px; }
+.others { display: grid; gap: 6px; }
+.footer { display: grid; gap: 8px; font-size: .875rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+.me ul { margin: 6px 0 0; padding-left: 1.2em; }
+.footer ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.freebox { font: inherit; width: 100%; border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); color: var(--ink); resize: vertical; }
+.ailine { border-left: 3px solid var(--accent); padding: 4px 0 4px 10px; font-size: .95rem; }
+.rate { display: flex; gap: 6px; flex-wrap: wrap; }
+.rate label { position: relative; }
+.rate input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.rate span { display: inline-block; min-width: 44px; text-align: center; border: 1.5px solid var(--line); border-radius: 8px; padding: 4px 10px; font-weight: 700; }
+.rate input:checked + span { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.rate input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.fb textarea { font: inherit; width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); color: var(--ink); resize: vertical; }
+@media (prefers-reduced-motion: no-preference) {
+  .screen { animation: in .25s ease-out; }
+  @keyframes in { from { opacity: .4; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+<div class="wrap">
+
+  <!-- はじめ -->
+  <section class="screen hero" id="s-start">
+    <p class="eyebrow">試作 v3 ・ 高校3年生向け</p>
+    <h1>進路の相性しらべ</h1>
+    <p>14問（指定校推薦は評定を入れて15問）に答えると、<span class="hl">あなたに合いそうな求人・指定校の3件</span>と、その理由、<span class="hl">入る前に確かめておくこと</span>が出ます。4分ほどです。</p>
+    <div class="paths">
+      <button class="path" type="button" id="go-job"><strong>就職</strong><span class="small muted">求人15件の中から探す</span></button>
+      <button class="path" type="button" id="go-school"><strong>指定校推薦</strong><span class="small muted">指定校15校の中から探す</span></button>
+    </div>
+    <div class="demo">
+      <p class="small muted">見本として、架空の生徒（Aさん＝就職希望、Bさん＝指定校推薦希望）の答えで、結果だけ先に見ることもできます。</p>
+      <div class="row">
+        <button class="btn" type="button" id="demo-a">Aさん（就職）の結果を見る</button>
+        <button class="btn" type="button" id="demo-b">Bさん（指定校）の結果を見る</button>
+      </div>
+    </div>
+    <p class="note">会社名・学校名・数字は、すべて架空です（国の求人票の項目をもとに作りました）。選んだ答えはこの画面の中だけで使い、どこにも送らず、保存もしません。本番では、自分の高校に届いた求人票と、自分の高校に推薦の枠がある学校の中から選ぶ形を考えています。</p>
+  </section>
+
+  <!-- 質問 -->
+  <section class="screen" id="s-q" hidden>
+    <form id="qform" class="wrap" novalidate>
+      <div class="qhead">
+        <p><span class="chip" id="mode-chip">就職</span></p>
+        <h1 id="q-title">自己分析の14問</h1>
+        <p class="muted small">それぞれ、いちばん近いものを1つ選んでください。</p>
+      </div>
+      <div id="q-body" class="wrap"></div>
+      <div class="qfoot">
+        <p class="small muted num" id="q-left"></p>
+        <div class="row">
+          <button class="btn primary" type="submit" id="q-submit" disabled>結果を見る</button>
+          <button class="btn link" type="button" id="q-back">最初に戻る</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- 結果 -->
+  <section class="screen wrap" id="s-r" hidden></section>
+
+  <footer class="footer">
+    <p><strong>この試作のしくみ（v3）</strong></p>
+    <ul>
+      <li>好きなこと（第1〜6問）・得意なこと（第7問）・働き方や学び方の好み（第8〜11問）・譲れない条件（第12・13問）を点にして、点の高い順に並べます。</li>
+      <li>いちばん譲れない条件に合わないものは候補から外します（外すと3件に届かない時は、外さずに3点下げます）。2番目の条件は外さず、満たしていれば1点足します。</li>
+      <li>「入る前に確かめておくこと」は、残業・休み・やめた人の数・見学の可否などの項目から決まり、第14問の答えに合うものを先に出します。</li>
+      <li>おすすめの順番と理由の文は、前もって用意したきまりと文の部品で出します。同じ答えなら毎回同じ結果になります。</li>
+    </ul>
+  </footer>
+</div>
+
+<script>
+(function () {
+"use strict";
+
+/* ---------- データ（架空の求人15件・指定校15校。04_サンプル_架空.json と同じ形＋文の部品） ---------- */
+var JOBS = [
+ {id:"job01",name:"周南ケミカルワークス（架空）",role:"プラント運転員（交替勤務）",place:"周南市",work:"この仕事は、決められた手順で工場の機械を見守り、操作する仕事です。",hours:"3交替制（6:00〜14:00／14:00〜22:00／22:00〜6:00）",holiday:118,salary:"初任給 18.5万円〜20万円（交替手当・夜勤手当を含む）",overtime:"月8時間ほど",visit:"可",license:"あり",hist:[[4,0],[5,1],[4,0]],types:["きちんと進める","調べる"],prefs:["座って考える","安定重視","地元"]},
+ {id:"job02",name:"防府精密機械（架空）",role:"NC旋盤オペレーター・検査",place:"防府市",work:"この仕事は、図面を見て機械に数字を入れ、金属の部品を削って大きさを確かめる仕事です。",hours:"8:00〜17:00（休憩60分）",holiday:115,salary:"初任給 17万円〜18.5万円",overtime:"月15時間ほど（忙しい時期は月25時間ほど）",visit:"可",license:"あり",hist:[[3,1],[4,1],[3,0]],types:["つくる","きちんと進める"],prefs:["一人でコツコツ","体を動かす","地元"]},
+ {id:"job03",name:"山口総合建設（架空）",role:"施工管理の補助",place:"山口市",work:"この仕事は、工事現場で、予定どおり安全に進んでいるかを確かめ、段取りを整える仕事です。",hours:"8:00〜17:00（休憩90分）。現場によって変わる",holiday:105,salary:"初任給 17万円〜19万円",overtime:"月25時間ほど（工事の時期で増える）",visit:"可",license:"あり",hist:[[5,2],[4,2],[6,1]],types:["まとめて動かす","つくる"],prefs:["人と関わる","体を動かす","挑戦したい"]},
+ {id:"job04",name:"かもめ福祉会（架空）",role:"介護職員（特別養護老人ホーム）",place:"下関市",work:"この仕事は、お年寄りの食事や入浴を手伝い、話し相手にもなる仕事です。",hours:"シフト制（早番・日勤・遅番・夜勤）",holiday:112,salary:"初任給 17万円〜19万円（夜勤手当・処遇改善手当を含む）",overtime:"月5時間ほど",visit:"可",license:"あり",hist:[[6,2],[5,2],[7,3]],types:["人を助ける"],prefs:["人と関わる","体を動かす","安定重視"]},
+ {id:"job05",name:"うべ食彩マート（架空）",role:"店舗の販売・売場づくり",place:"宇部市",work:"この仕事は、売場に商品を並べ、値札や宣伝の札を作って、お客さんの質問に答える仕事です。",hours:"シフト制（8:00〜17:00 または 12:00〜21:00）",holiday:110,salary:"初任給 16.5万円〜18万円",overtime:"月10時間ほど",visit:"可",license:"あり",hist:[[8,3],[7,2],[9,4]],types:["表す","まとめて動かす"],prefs:["人と関わる","挑戦したい","地元"]},
+ {id:"job06",name:"岩国ロジスティクス（架空）",role:"倉庫管理・配送の補助",place:"岩国市",work:"この仕事は、届いた荷物を在庫表と照らし合わせて棚に入れ、出荷の準備をする仕事です。",hours:"8:30〜17:30（休憩60分）。忙しい時期は早出あり",holiday:112,salary:"初任給 17万円〜18万円（運転手当は別）",overtime:"月20時間ほど",visit:"不可",license:"あり",hist:[[4,1],[3,1],[5,2]],types:["きちんと進める","まとめて動かす"],prefs:["体を動かす","一人でコツコツ","県外OK"]},
+ {id:"job07",name:"やまぐちデジタルサポート（架空）",role:"システム運用・ヘルプデスク",place:"山口市",work:"この仕事は、パソコンやネットワークを見守り、困った人の問い合わせに答えて原因を直す仕事です。",hours:"9:00〜18:00（休憩60分）。月に数回、夜間の当番あり",holiday:125,salary:"初任給 18万円〜20万円",overtime:"月15時間ほど",visit:"可",license:"あり",hist:[[2,0],[3,0],[3,1]],types:["調べる","つくる"],prefs:["座って考える","挑戦したい","県外OK"]},
+ {id:"job08",name:"ふくろう信用金庫（架空）",role:"窓口・一般事務",place:"萩市",work:"この仕事は、窓口でお金の受付や相談に対応し、毎日の数字を2人で確かめ合う仕事です。",hours:"8:30〜17:15（休憩60分）",holiday:121,salary:"初任給 17.5万円〜19万円",overtime:"月10時間ほど",visit:"可",license:"あり",hist:[[3,0],[3,0],[2,0]],types:["きちんと進める","人を助ける"],prefs:["人と関わる","座って考える","安定重視"]},
+ {id:"job09",name:"長門湯の里旅館（架空）",role:"フロント・接客",place:"長門市",work:"この仕事は、お客さんの受付や案内をし、館内のお知らせも自分で作る仕事です。",hours:"シフト制（7:00〜16:00／13:00〜22:00 など）",holiday:100,salary:"初任給 16万円〜17.5万円（食事補助あり）",overtime:"月10時間ほど（忙しい時期は増える）",visit:"可",license:"なし",hist:[[6,3],[5,3],[6,2]],types:["人を助ける","表す"],prefs:["人と関わる","体を動かす","地元"]},
+ {id:"job10",name:"柳井こがね食品（架空）",role:"製造スタッフ・商品開発の補助",place:"柳井市",work:"この仕事は、地元の素材で漬物やお菓子を作り、味や形を確かめる仕事です。",hours:"7:30〜16:30（休憩60分）",holiday:114,salary:"初任給 16.5万円〜18万円",overtime:"月8時間ほど",visit:"可",license:"あり",hist:[[4,1],[3,0],[4,1]],types:["つくる","調べる"],prefs:["一人でコツコツ","体を動かす","安定重視"]},
+ {id:"job11",name:"下松電設工業（架空）",role:"電気工事士（見習い）",place:"下松市",work:"この仕事は、図面を見て、照明や配電盤の配線を取り付け、点検する仕事です。",hours:"8:00〜17:00（休憩90分）",holiday:108,salary:"初任給 17.5万円〜19.5万円",overtime:"月20時間ほど",visit:"可",license:"あり",hist:[[3,1],[4,0],[3,1]],types:["つくる","きちんと進める"],prefs:["体を動かす","挑戦したい","地元"]},
+ {id:"job12",name:"NPO法人 おのだ子どもの居場所（架空）",role:"放課後児童クラブの支援員",place:"山陽小野田市",work:"この仕事は、放課後の小学生の宿題を見たり、遊びや行事を企画したりする仕事です。",hours:"12:30〜19:00。学校が休みの日は 8:00〜17:00",holiday:110,salary:"初任給 15万円〜16.5万円",overtime:"月3時間ほど",visit:"可",license:"あり",hist:[[2,1],[2,0],[3,1]],types:["人を助ける","まとめて動かす"],prefs:["人と関わる","安定重視","地元"]},
+ {id:"job13",name:"サロン・ド・うべ（架空）",role:"美容師アシスタント",place:"宇部市",work:"この仕事は、先輩の美容師を助けながら、練習を重ねて技術を身につける仕事です。",hours:"9:30〜19:30（休憩60分）。火曜は定休日",holiday:96,salary:"初任給 14.5万円〜16万円",overtime:"月10時間ほど（練習の時間は含まない）",visit:"可",license:"あり",hist:[[3,2],[2,2],[3,2]],types:["表す","人を助ける"],prefs:["人と関わる","挑戦したい","県外OK"]},
+ {id:"job14",name:"美祢みどり農園（架空）",role:"栽培管理・出荷作業",place:"美祢市",work:"この仕事は、ハウスや畑で野菜を育て、温度や水を記録して出荷する仕事です。",hours:"6:30〜15:30（休憩90分）。夏は朝が早くなる",holiday:96,salary:"初任給 15.5万円〜17万円",overtime:"月5時間ほど（収穫の時期は増える）",visit:"可",license:"あり",hist:[[2,0],[1,0],[2,1]],types:["調べる","つくる"],prefs:["体を動かす","一人でコツコツ","地元"]},
+ {id:"job15",name:"光オートサービス（架空）",role:"自動車整備士（見習い）",place:"光市",work:"この仕事は、車を点検し、故障の原因を機械で調べて直す仕事です。",hours:"8:30〜17:30（休憩60分）。土曜に出勤する月が多い",holiday:104,salary:"初任給 16.5万円〜18万円",overtime:"月15時間ほど",visit:"可",license:"あり",hist:[[3,1],[2,0],[4,1]],types:["調べる","きちんと進める"],prefs:["体を動かす","安定重視","地元"]}
+];
+var SCHOOLS = [
+ {id:"sch01",name:"周防みらい大学（架空）",dept:"経済学部 地域経済学科",place:"山口市",work:"この学科では、地元の商店街や観光のデータを調べ、まちを元気にする方法を考えます。",lic:"高校教諭一種免許（公民）。日商簿記の受験対策講座あり",grade:3.5,tuition:110,oc:"あり：年3回",direct:"",career:"",licCond:"",types:["調べる","まとめて動かす"],prefs:["座って考える","安定重視","地元"]},
+ {id:"sch02",name:"長門こもれび短期大学（架空）",dept:"幼児教育学科（2年制）",place:"長門市",work:"この学科では、子どもの発達や遊びの意味を学び、保育所や幼稚園での実習を何度も行います。",lic:"保育士資格、幼稚園教諭二種免許",grade:3.0,tuition:100,oc:"あり：年3回",direct:"保育士資格と幼稚園の先生の免許",career:"保育士・幼稚園の先生",licCond:"",types:["人を助ける","表す"],prefs:["人と関わる","体を動かす","地元"]},
+ {id:"sch03",name:"関門ことのは大学（架空）",dept:"看護学部 看護学科",place:"下関市",work:"この学科では、体のしくみや患者さんへの接し方を学び、3年生から病院で長い実習を行います。",lic:"看護師国家試験の受験資格。保健師国家試験の受験資格（選択）",grade:3.8,tuition:150,oc:"あり：年2回。体験授業あり",direct:"看護師の国家試験を受ける資格",career:"看護師",licCond:"",types:["人を助ける","きちんと進める"],prefs:["人と関わる","体を動かす","安定重視"]},
+ {id:"sch04",name:"瀬戸内ひかり大学（架空）",dept:"情報学部 情報システム学科",place:"広島市",work:"この学科では、プログラミングやネットワークを学び、チームでアプリを作ります。",lic:"高校教諭一種免許（情報）。基本情報技術者試験の対策講座あり",grade:3.3,tuition:125,oc:"あり：年4回",direct:"",career:"",licCond:"",types:["つくる","調べる"],prefs:["座って考える","挑戦したい","県外OK"]},
+ {id:"sch05",name:"防長工科大学（架空）",dept:"工学部 機械システム工学科",place:"宇部市",work:"この学科では、ものを動かすしくみと部品の設計を、実験と工作で学びます。",lic:"高校教諭一種免許（工業）。危険物取扱者などの受験対策講座あり",grade:3.2,tuition:115,oc:"あり：年3回",direct:"",career:"",licCond:"",types:["つくる","調べる"],prefs:["一人でコツコツ","体を動かす","地元"]},
+ {id:"sch06",name:"周南ひまわり福祉大学（架空）",dept:"社会福祉学部 社会福祉学科",place:"周南市",work:"この学科では、暮らしを支える福祉の制度と、相談の聞き方を学びます。",lic:"社会福祉士国家試験の受験資格。精神保健福祉士国家試験の受験資格（選択）",grade:3.2,tuition:105,oc:"あり：年3回",direct:"社会福祉士の国家試験を受ける資格",career:"",licCond:"",types:["人を助ける","まとめて動かす"],prefs:["人と関わる","安定重視","地元"]},
+ {id:"sch07",name:"萩みなと大学（架空）",dept:"観光学部 観光マネジメント学科",place:"萩市",work:"この学科では、観光地の魅力の伝え方を学び、地域の人と実際に観光ルートをつくります。",lic:"国家資格はなし。旅行業務取扱管理者の試験の対策講座あり",grade:3.0,tuition:100,oc:"なし（個別の見学は随時受付）",direct:"",career:"",licCond:"",types:["表す","まとめて動かす"],prefs:["人と関わる","挑戦したい","県外OK"]},
+ {id:"sch08",name:"山陽おのだ薬科大学（架空）",dept:"薬学部 薬学科（6年制）",place:"山陽小野田市",work:"この学科では、薬が体に効くしくみや薬の作り方を、6年間かけて学びます。",lic:"薬剤師国家試験の受験資格",grade:4.0,tuition:190,oc:"あり：年3回",direct:"薬剤師の国家試験を受ける資格",career:"薬剤師",licCond:"",types:["調べる","きちんと進める"],prefs:["座って考える","安定重視","地元"]},
+ {id:"sch09",name:"厚狭川さくら短期大学（架空）",dept:"食物栄養学科（2年制）",place:"下松市",work:"この学科では、食べ物と体の関係や給食の作り方を、調理実習とあわせて学びます。",lic:"栄養士免許。フードスペシャリストの受験資格",grade:3.0,tuition:95,oc:"あり：年3回",direct:"栄養士の免許",career:"栄養士",licCond:"",types:["調べる","人を助ける"],prefs:["体を動かす","安定重視","地元"]},
+ {id:"sch10",name:"福岡かもめ大学（架空）",dept:"法学部 法律学科",place:"福岡市",work:"この学科では、法律の考え方を学び、身近なもめごとやルールのつくり方を話し合います。",lic:"高校教諭一種免許（公民）。公務員試験・行政書士試験の対策講座あり",grade:3.5,tuition:115,oc:"あり：年4回",direct:"",career:"",licCond:"",types:["調べる","きちんと進める"],prefs:["座って考える","安定重視","県外OK"]},
+ {id:"sch11",name:"北九州ものづくり大学（架空）",dept:"建築学部 建築学科",place:"北九州市",work:"この学科では、建物の設計を学び、模型づくりや図面の授業を多く行います。",lic:"二級建築士・木造建築士の受験資格。卒業後の実務経験で一級建築士の受験資格",grade:3.4,tuition:130,oc:"あり：年4回",direct:"二級建築士の試験を受ける資格",career:"",licCond:"一級建築士の試験を受けるには、卒業後に何年の実務経験が要るか",types:["つくる","表す"],prefs:["座って考える","挑戦したい","県外OK"]},
+ {id:"sch12",name:"広島ひびき大学（架空）",dept:"心理学部 心理学科",place:"広島市",work:"この学科では、人の気持ちや行動のしくみを、実験やアンケートで調べる方法を学びます。",lic:"認定心理士の申請資格。公認心理師の受験に必要な科目を学べる（大学院などへの進学も必要）",grade:3.5,tuition:120,oc:"あり：年3回",direct:"",career:"",licCond:"公認心理師を目指すなら、大学院などに進む必要があるか、全部で何年かかるか",types:["調べる","人を助ける"],prefs:["人と関わる","座って考える","県外OK"]},
+ {id:"sch13",name:"瀬戸内デザイン芸術大学（架空）",dept:"芸術学部 ビジュアルデザイン学科",place:"岡山市",work:"この学科では、ポスターやロゴなど、人に伝わる絵や形のつくり方を作品づくりで学びます。",lic:"高校教諭一種免許（美術）。色彩検定の受験対策あり",grade:3.0,tuition:135,oc:"あり：年3回。作品の講評会あり",direct:"",career:"",licCond:"",types:["表す","つくる"],prefs:["一人でコツコツ","挑戦したい","県外OK"]},
+ {id:"sch14",name:"西京ひだまり大学（架空）",dept:"教育学部 初等教育学科",place:"山口市",work:"この学科では、小学校の全教科の教え方を学び、1年生から学校で授業を手伝います。",lic:"小学校教諭一種免許。特別支援学校教諭免許（選択）",grade:3.6,tuition:55,oc:"あり：年2回",direct:"小学校の先生の免許",career:"小学校の先生",licCond:"",types:["人を助ける","まとめて動かす"],prefs:["人と関わる","体を動かす","地元"]},
+ {id:"sch15",name:"防府しおかぜ大学（架空）",dept:"生命環境学部 環境科学科",place:"防府市",work:"この学科では、水や土、生き物を調べ、環境を守る方法を学びます。",lic:"高校教諭一種免許（理科）。環境関連の資格の受験対策講座あり",grade:3.2,tuition:120,oc:"あり：年3回",direct:"",career:"",licCond:"",types:["調べる","つくる"],prefs:["体を動かす","一人でコツコツ","地元"]}
+];
+var AFTER = {sch01:"地元の銀行・信用金庫、製造業の事務・営業、公務員",sch02:"保育所・幼稚園・認定こども園、児童福祉施設",sch03:"病院・診療所、訪問看護、保健所",sch04:"IT企業のエンジニア、一般企業の情報システム部門",sch05:"機械・自動車・化学メーカーの技術職、大学院への進学",sch06:"福祉施設、市町の福祉の窓口、病院の相談員",sch07:"旅行会社、ホテル・旅館、観光協会、自治体",sch08:"薬局、病院、製薬会社、ドラッグストア",sch09:"学校・病院・福祉施設の給食、食品会社",sch10:"公務員、企業の法務・総務、金融機関",sch11:"設計事務所、建設会社、ハウスメーカー、自治体",sch12:"一般企業（人事・営業・販売）、福祉・医療施設、大学院への進学",sch13:"デザイン会社、広告会社、印刷会社、一般企業の広報",sch14:"小学校の教員（県内が多い）、教育・保育関連の企業",sch15:"環境コンサルタント、化学・食品メーカー、自治体、大学院への進学"};
+var YAMAGUCHI = ["山口市","周南市","防府市","下関市","宇部市","岩国市","萩市","長門市","柳井市","下松市","山陽小野田市","美祢市","光市"];
+
+/* ---------- 質問（判断シート4枚目の10問。第5〜9問は言葉を入れ替える） ---------- */
+var PAIRS = [["地元","県外OK"],["安定重視","挑戦したい"],["人と関わる","一人でコツコツ"],["体を動かす","座って考える"]];
+var NONE = ["どれもピンとこない",""];
+var LIKE_IDS = ["l1","l2","l3","l4","l5","l6"];
+var Q = [
+ {id:"l1",sec:0,text:"自由に使える1日があるなら、いちばんやってみたいのは？",opts:[["工作や修理など、手を動かして物をつくる","つくる"],["気になった疑問を、納得するまで調べる","調べる"],["絵・写真・動画・文章で作品を作る","表す"],NONE]},
+ {id:"l2",sec:0,text:"文化祭の準備で、やりたい係は？",opts:[["困っている人の相談にのったり、手伝ったりする係","人を助ける"],["企画を考えて、みんなに声をかけて動かす係","まとめて動かす"],["予算や持ち物を表にして、抜けがないか管理する係","きちんと進める"],NONE]},
+ {id:"l3",sec:0,text:"職場体験に行けるなら、どれ？",opts:[["工場や工事現場で、実際に物を作る様子を見る","つくる"],["研究所や検査室で、データを調べる様子を見る","調べる"],["病院や学校で、人に接する様子を見る","人を助ける"],NONE]},
+ {id:"l4",sec:0,text:"アルバイトで、ずっと続けられそうなのは？",opts:[["工場や厨房で、商品を作る・組み立てる","つくる"],["お店の飾りつけや、商品の宣伝の札をデザインする","表す"],["お客さんに商品をすすめて売る","まとめて動かす"],NONE]},
+ {id:"l5",sec:0,text:"グループ発表をまとめるなら、どの役？",opts:[["スライドのデザインや、伝え方の工夫を考える","表す"],["発表の流れを決めて、役割を割りふる","まとめて動かす"],["資料の数字や誤字をチェックして、ミスをなくす","きちんと進める"],NONE]},
+ {id:"l6",sec:0,text:"テスト前、やっていて楽しい・続けやすいのは？",opts:[["なぜそうなるのか、理由を考えて理解する","調べる"],["友達に教えてあげる","人を助ける"],["ノートを整理して、計画どおりに進める","きちんと進める"],NONE]},
+ {id:"t1",sec:0,topic:"得意なこと",text:"友達や先生から、よく頼まれる・ほめられるのは？",opts:[["物を作る・直す","つくる"],["調べて、分かりやすく説明する","調べる"],["絵・文章・デザイン","表す"],["困っている人の手伝いや相談","人を助ける"],["人に声をかけて、まとめる","まとめて動かす"],["計画・整理・ミスのチェック","きちんと進める"],["特にない・思いつかない",""]]},
+ {id:"q5",sec:1,text:"通う場所は、どれが近い？",job:["家から通える会社がいい","家を出てもいい（県外でも行ける）","どちらでもよい"],school:["家から通える学校がいい","家を出てもいい（県外でも行ける）","どちらでもよい"]},
+ {id:"q6",sec:1,text:"安定か、挑戦か。どれが近い？",textSchool:"卒業後の進路の決まり方は、どれが近い？",job:["長く安定して働ける会社","新しいことに挑戦できるが、先は少し不安定な会社","どちらでもよい"],school:["卒業後の進路がはっきりしている学科","いろいろ試しながら進路を広げられる学科","どちらでもよい"]},
+ {id:"q7",sec:1,text:"人との関わり方は、どれが近い？",job:["毎日たくさんの人と話す仕事","ひとりで集中して進める時間が長い仕事","どちらでもよい"],school:["グループで話し合う授業が多い学び","ひとりで調べて考える授業が多い学び","どちらでもよい"]},
+ {id:"q8",sec:1,text:"体の使い方は、どれが近い？",job:["立って動く・体を使う仕事","座って、書類やパソコンで進める仕事","どちらでもよい"],school:["実習や体験が多い学び","座って学ぶ授業が多い学び","どちらでもよい"]},
+ {id:"q9",sec:1,text:"いちばん譲れない条件を1つ選ぶと？",job:[["給料が高いこと","salary"],["年間休日が多いこと","holiday"],["残業が少ないこと","overtime"],["資格が取れること","licJ"]],school:[["学費が安いこと","tuition"],["家から通えること","commute"],["資格が取れること","licS"],["卒業後の進路がはっきりしていること","path"]]},
+ {id:"q9b",sec:1,text:"2番目に大事な条件は？",job:[["給料が高いこと","salary"],["年間休日が多いこと","holiday"],["残業が少ないこと","overtime"],["資格が取れること","licJ"],["特にない",""]],school:[["学費が安いこと","tuition"],["家から通えること","commute"],["資格が取れること","licS"],["卒業後の進路がはっきりしていること","path"],["特にない",""]]},
+ {id:"q10",sec:2,text:"部活・バイト・習い事などで、始める前に思っていたのと実際が違った（ギャップがあった）ことがあるなら、いちばん近いのは？",opts:[["人間関係","人間関係"],["きつさ（時間・体力）","きつさ"],["やることの中身","中身"],["特にない・やっていない","なし"]]},
+ {id:"q11",sec:3,schoolOnly:true,text:"評定（高校の成績の平均）は、だいたいどれくらい？",opts:[["4.0以上","4.0"],["3.5〜3.9","3.5"],["3.0〜3.4","3.0"],["3.0未満","0"],["分からない","x"]]},
+/* 公開用では、自由な一言（AIが読む問）は外す */
+];
+var SECS = ["好きなこと・得意なこと（第1〜7問）","条件と好み（第8〜13問）","これまでのこと（第14問）","成績（指定校の人だけ）","自由な一言（書かなくてもよい）"];
+var TOKUI_WORD = {"つくる":"物を作ったり直したりすること","調べる":"調べて分かりやすく説明すること","表す":"絵や文章・デザイン","人を助ける":"困っている人の手伝いや相談","まとめて動かす":"人に声をかけてまとめること","きちんと進める":"計画・整理・ミスのチェック"};
+function qById(id){ return Q.filter(function(x){return x.id===id;})[0]; }
+
+/* ---------- 計算に使う小さな道具 ---------- */
+function salaryMax(j){var m=j.salary.match(/[\d.]+(?=万円)/g)||[];return Math.max.apply(null,m.map(Number));}
+function overtimeOf(j){var m=j.overtime.match(/月(\d+)時間/);return m?Number(m[1]):0;}
+function hires(j){return j.hist.reduce(function(a,h){return a+h[0];},0);}
+function quits(j){return j.hist.reduce(function(a,h){return a+h[1];},0);}
+function quitRate(j){var h=hires(j);return h?quits(j)/h:0;}
+function inPref(p){return YAMAGUCHI.indexOf(p)>=0;}
+function hasOC(s){return s.oc.indexOf("あり")===0;}
+function pct(x){return Math.round(x*100);}
+
+/* 第9問の条件：満たすか・言葉 */
+var COND = {
+ salary:{label:"給料の高さ",short:"給料",rule:"初任給の上限が月19万円以上",miss:"初任給の上限が月19万円に届かない",ok:function(j){return salaryMax(j)>=19;},say:function(j){return "初任給は最大で月"+salaryMax(j)+"万円と、あなたが一番大事にしたい「給料」の条件も満たしています。";}},
+ holiday:{label:"休みの多さ",short:"休み",rule:"年間休日110日以上",miss:"年間休日が110日に届かない",ok:function(j){return j.holiday>=110;},say:function(j){return "年間休日は"+j.holiday+"日と、あなたが一番大事にしたい「休み」の条件も満たしています。";}},
+ overtime:{label:"残業の少なさ",short:"残業の少なさ",rule:"残業が月10時間ほど以下",miss:"残業の目安が月10時間ほどより多い",ok:function(j){return overtimeOf(j)<=10;},say:function(j){return "残業は月"+overtimeOf(j)+"時間ほどと、あなたが一番大事にしたい「残業の少なさ」の条件も満たしています。";}},
+ licJ:{label:"資格が取れること",short:"資格",rule:"資格取得の支援がある",miss:"資格取得の支援が無い",ok:function(j){return j.license==="あり";},say:function(){return "資格を取る費用を会社が出してくれるので、あなたが一番大事にしたい「資格」の条件も満たしています。";}},
+ tuition:{label:"学費の安さ",short:"学費",rule:"学費が年110万円以下",miss:"学費が年110万円を超える",ok:function(s){return s.tuition<=110;},say:function(s){return "学費は年約"+s.tuition+"万円と、あなたが一番大事にしたい「学費」の条件も満たしています。";}},
+ commute:{label:"家から通えること",short:"家から通える",rule:"山口県内にある",miss:"山口県の外にある",ok:function(s){return inPref(s.place);},say:function(s){return s.place+"にある県内の学校で、あなたが一番大事にしたい「家から通える」の条件も満たしています。";}},
+ licS:{label:"資格が取れること",short:"資格",rule:"進路に直結する免許や国家試験の受験資格が取れる",miss:"進路に直結する資格が取れない",ok:function(s){return !!s.direct;},say:function(s){return s.direct+"が取れ、あなたが一番大事にしたい「資格」の条件も満たしています。";}},
+ path:{label:"進路がはっきりしていること",short:"進路がはっきり",rule:"資格と就く仕事が1つに決まっている",miss:"卒業後の進路が1つに決まっていない",ok:function(s){return !!s.career;},say:function(s){return "卒業後は"+s.career+"になる道がはっきりしていて、あなたが一番大事にしたい「進路がはっきり」の条件も満たしています。";}}
+};
+
+var TYPE_WORD = {"つくる":"物をつくること","調べる":"調べること","表す":"作品で表すこと","人を助ける":"人を助けること","まとめて動かす":"人をまとめて動かすこと","きちんと進める":"きちんと進めること"};
+var D10_WORD = {"人間関係":"人間関係","きつさ":"時間や体力のきつさ","中身":"やることの中身"};
+
+/* 好みの言葉：[生徒の答えの言い方, 求人・学校の側の言い方, 確かめること] */
+var PREF_TEXT = {
+ job:{
+  "地元":["家から通いたい","地元に根ざした会社"],"県外OK":["家を出てもいい","県外への異動や研修がある会社"],
+  "安定重視":["長く安定して働きたい","長く安定して働くことを大事にする会社"],"挑戦したい":["新しいことに挑戦したい","新しいことに挑戦する場面が多い会社"],
+  "人と関わる":["たくさんの人と話したい","人と話す時間が多い仕事"],"一人でコツコツ":["ひとりで集中したい","ひとりで集中して進める時間が長い仕事"],
+  "体を動かす":["体を動かしたい","体を使う時間が長い仕事"],"座って考える":["座って進めたい","座って画面や書類を見る時間が長い仕事"]
+ },
+ school:{
+  "地元":["家から通いたい","県内の学校"],"県外OK":["家を出てもいい","県外の学校"],
+  "安定重視":["進路がはっきりした学科がいい","卒業後の進路がはっきりした学科"],"挑戦したい":["いろいろ試しながら進路を広げたい","いろいろ試しながら進路を広げる学科"],
+  "人と関わる":["グループで話し合いたい","グループで話し合う授業が多い学び"],"一人でコツコツ":["ひとりで調べて考えたい","ひとりで調べて考える授業が多い学び"],
+  "体を動かす":["実習や体験が多い方がいい","実習や体験が多い学び"],"座って考える":["座って学ぶ方がいい","座って学ぶ授業が多い学び"]
+ }
+};
+/* 結果の文「〜な働き方が合いそうです」用：[続ける形, 言い切る形] */
+var PREF_PHRASE = {
+ job:{"地元":["家から通えて","家から通える"],"県外OK":["県外にも出られて","県外にも出られる"],"安定重視":["安定していて","安定した"],"挑戦したい":["新しいことに挑戦できて","新しいことに挑戦できる"],"人と関わる":["人とたくさん話して","人とたくさん話す"],"一人でコツコツ":["ひとりでコツコツ","ひとりでコツコツ進める"],"体を動かす":["体を動かして","体を動かす"],"座って考える":["座って進めて","座って進める"]},
+ school:{"地元":["家から通えて","家から通える"],"県外OK":["県外にも出られて","県外にも出られる"],"安定重視":["進路がはっきりしていて","進路がはっきりした"],"挑戦したい":["いろいろ試せて","いろいろ試せる"],"人と関わる":["グループで話し合って","グループで話し合う"],"一人でコツコツ":["ひとりでじっくり","ひとりでじっくり考える"],"体を動かす":["実習や体験が多くて","実習や体験の多い"],"座って考える":["座って学ぶ時間が多くて","座って学ぶ時間の多い"]}
+};
+
+/* 「入る前に確かめておくこと」の表（上から順に見る）。tags＝第10問のどの答えの人に先に出すか */
+var CHECK_JOB = [
+ {tags:["人間関係"],test:function(j){return j.visit==="不可";},say:function(){return "会社見学ができないと書かれている。理由と、代わりに先輩と話せる機会があるかを聞く";}},
+ {tags:["人間関係","中身"],test:function(j){return j.visit==="可";},say:function(j,d10){return d10==="中身"?"見学で、実際にやる作業の中身と、1日の流れを見る":"見学で、先輩が新人にどう話しかけているかと、1日の流れを見る";}},
+ {tags:["人間関係"],test:function(j){return quitRate(j)>0.38;},say:function(j){return "過去3年に入った"+hires(j)+"人のうち"+quits(j)+"人がやめている（約"+pct(quitRate(j))+"%。参考：高校から就職した人の3年以内の離職は全国で約38%）。やめた人が多い理由と、続いている先輩の話を聞く";}},
+ {tags:["人間関係"],test:function(j){return quits(j)>=1&&quitRate(j)<=0.38;},say:function(j){return "過去3年に入った"+hires(j)+"人のうち"+quits(j)+"人がやめている。やめた理由を聞く（参考：高校から就職した人の3年以内の離職は全国で約38%。数え方が少し違うので比べるのは目安"+(hires(j)<10?"。入った人数も少ない":"")+"）";}},
+ {tags:["きつさ"],test:function(j){return overtimeOf(j)>=20;},say:function(j){return "残業は月"+overtimeOf(j)+"時間ほど。忙しい時期はいつか、残業代は全部出るかを聞く";}},
+ {tags:["きつさ"],test:function(j){return j.holiday<105;},say:function(j){return "年間休日は"+j.holiday+"日。休みは月に何日か、希望の日に休めるかを聞く";}},
+ {tags:["きつさ"],test:function(j){return /交替|交代|夜勤|シフト|夜間/.test(j.hours);},say:function(){return "早番・遅番・夜勤などの回数と、生活のリズムを保てるかを聞く";}},
+ {tags:[],test:function(j){return j.license==="あり";},say:function(){return "資格の受験費用や講習を、会社がどこまで出すか。勉強の時間は仕事の中でとれるかを聞く";}},
+ {tags:["きつさ"],test:function(){return true;},say:function(){return "1日の働く時間のうち、立ち仕事や力仕事がどれくらいあるか、忙しい時期はいつかを聞く";}}
+];
+var CHECK_SCHOOL = [
+ {tags:["人間関係"],test:hasOC,say:function(){return "オープンキャンパスで在学生と話し、授業や実習の班の雰囲気を聞く";}},
+ {tags:["中身"],test:hasOC,say:function(){return "オープンキャンパスの体験授業で、学ぶ中身（苦手になりそうな授業）を見る";}},
+ {tags:["中身","人間関係"],test:function(s){return !hasOC(s);},say:function(){return "オープンキャンパスが無いので、個別の見学で授業の中身を見せてもらえるか聞く";}},
+ {tags:[],test:function(s){return !!s.licCond;},say:function(s){return s.licCond;}},
+ {tags:["きつさ"],test:function(s){return !inPref(s.place);},say:function(){return "県外の学校なので、学費のほかに家賃・生活費が年いくらかかるか";}},
+ {tags:[],test:function(s){return s.grade>=3.5;},say:function(s){return "評定の目安は"+s.grade.toFixed(1)+"。自分の評定で推薦枠に届くか、同じ学校を希望する人が何人いるかを先生に聞く";}},
+ {tags:[],test:function(){return true;},say:function(s){return "卒業後の主な進路は「"+AFTER[s.id]+"」。自分の行きたい道に進んだ先輩がいるかを聞く";}}
+];
+/* 好みが合わなかった時の確かめること（この順で1つ選ぶ） */
+var DIFF_ORDER = [2,3,1,0];
+var DIFF_CHECK = {
+ job:["県外への異動や研修がどれくらいあるか、通勤の時間と費用","仕事の内容や配属が、入ってからどれくらい変わるか","人と話す時間と、ひとりで進める時間が1日にどれくらいか（電話や来客の対応、班での作業など）","1日のうち、体を使う時間と座っている時間の割合"],
+ school:["通学にかかる時間と費用。県外なら家賃・生活費も","卒業後の主な進路で、希望の進路になった人の割合と、ならなかった人の進路","グループで話し合う授業と、ひとりで考える授業の割合","実習や体験の授業と、座って学ぶ授業の割合"]
+};
+
+/* ---------- 答えから結果を作る ---------- */
+function analyze(mode, ans){
+  var typeScore = {}, likeScore = {}; Object.keys(TYPE_WORD).forEach(function(t){typeScore[t]=0;likeScore[t]=0;});
+  LIKE_IDS.forEach(function(id){ var t=qById(id).opts[ans[id]][1]; if(t){ typeScore[t]+=1; likeScore[t]+=1; } });
+  var tokui = qById("t1").opts[ans.t1][1] || null;
+  if (tokui) typeScore[tokui] += 1;
+  var prefs = ["q5","q6","q7","q8"].map(function(id,i){var a=ans[id];return a===2?null:PAIRS[i][a];});
+  var condKey = qById("q9")[mode][ans.q9][1];
+  var cond2 = qById("q9b")[mode][ans.q9b][1] || null;
+  if (cond2===condKey) cond2 = null;
+  var d10 = qById("q10").opts[ans.q10][1];
+  var gradeLow = null;
+  if (mode==="school") { var g = qById("q11").opts[ans.q11][1]; gradeLow = g==="x"?null:Number(g); }
+  return {mode:mode,typeScore:typeScore,likeScore:likeScore,tokui:tokui,prefs:prefs,cond:condKey,cond2:cond2,d10:d10,gradeLow:gradeLow};
+}
+
+function scoreItem(item, me){
+  var tParts = [], t = 0;
+  item.types.forEach(function(ty){t+=me.typeScore[ty];tParts.push(ty+me.typeScore[ty]);});
+  var p = 0, match = [], diff = [];
+  me.prefs.forEach(function(pr,i){
+    if(!pr) return;
+    var pair = PAIRS[i];
+    var tag = item.prefs.filter(function(x){return pair.indexOf(x)>=0;})[0];
+    /* 通う場所は札ではなく実際の場所で決める：求人は県外への異動・研修がある物だけ「県外OK」、学校は所在地が県外なら「県外OK」 */
+    if (i===0) tag = item.hist ? (item.prefs.indexOf("県外OK")>=0?"県外OK":"地元") : (inPref(item.place)?"地元":"県外OK");
+    if(!tag) return;
+    if(tag===pr){p+=1;match.push(pr);} else {diff.push({i:i,me:pr,it:tag});}
+  });
+  var condOk = COND[me.cond].ok(item);
+  var cond2Ok = me.cond2 ? COND[me.cond2].ok(item) : false;
+  return {item:item,t:t,tParts:tParts,p:p,match:match,diff:diff,condOk:condOk,c:condOk?2:0,cond2Ok:cond2Ok,c2:cond2Ok?1:0,adj:0};
+}
+
+function recommend(me){
+  var pool = me.mode==="job"?JOBS:SCHOOLS;
+  var notes = [];
+  var list = pool.map(function(it){return scoreItem(it,me);});
+
+  if (me.mode==="school" && me.gradeLow!==null){
+    var below = list.filter(function(r){return r.item.grade>me.gradeLow;});
+    var keep = list.filter(function(r){return r.item.grade<=me.gradeLow;});
+    if (below.length && keep.length>=3){ list = keep; notes.push("推薦に要る評定に、あなたの答えた評定が届かない"+below.length+"校（"+namesOf(below)+"）は、候補から外しました。"); }
+    else if (below.length){ below.forEach(function(r){r.gradeShort=true;r.adj-=3;}); notes.push("評定の目安に届かない学校を外すと3校に届かないので、外さずに3点下げ、カードに書きました。"); }
+  }
+  var miss = list.filter(function(r){return !r.condOk;});
+  var hit = list.filter(function(r){return r.condOk;});
+  var excluded = [];
+  if (miss.length && hit.length>=3){ list = hit; excluded = miss; notes.push("いちばん譲れない条件に選んだ「"+COND[me.cond].short+"」に合わない（"+COND[me.cond].miss+"）"+miss.length+(me.mode==="job"?"件":"校")+"（"+namesOf(miss)+"）は、候補から外しました。"); }
+  else if (miss.length){ miss.forEach(function(r){r.adj-=3;}); notes.push(COND[me.cond].miss+"ものを外すと3件に届かないので、外さずに3点下げました。"); }
+
+  list.forEach(function(r){r.total=r.t+r.p+r.c+r.c2+r.adj;});
+  list.sort(function(a,b){
+    if (b.total!==a.total) return b.total-a.total;
+    if (a.diff.length!==b.diff.length) return a.diff.length-b.diff.length;
+    if (me.mode==="job"){ var d=quitRate(a.item)-quitRate(b.item); if(d) return d; }
+    else { var o=(hasOC(b.item)?1:0)-(hasOC(a.item)?1:0); if(o) return o; var f=a.item.tuition-b.item.tuition; if(f) return f; }
+    return a.item.id<b.item.id?-1:1;
+  });
+  var top = list.slice(0,3), prefNote = "";
+  if (excluded.length){
+    for (var i=0;i<4 && !prefNote;i++){
+      var pr = me.prefs[i]; if (!pr) continue;
+      var topDiff = top.filter(function(r){ return r.diff.some(function(d){return d.i===i;}); }).length;
+      var exMatch = excluded.filter(function(r){ return r.match.indexOf(pr)>=0; }).length;
+      if (topDiff>=2 && exMatch>=1){
+        var unit = me.mode==="job"?"求人":"学校";
+        prefNote = "いちばん譲れない「"+COND[me.cond].short+"」に合う"+unit+"の中から選んだので、「"+PREF_TEXT[me.mode][pr][0]+"」という好みに合う"+unit+"は少なくなりました（条件に合わなかった"+unit+"の中には、この好みに合う物もありました）。";
+      }
+    }
+  }
+  return {top:top,others:list.slice(3,5),notes:notes,prefNote:prefNote};
+}
+function namesOf(rs){var n=rs.map(function(r){return r.item.name.replace("（架空）","");});return n.length>2?n.slice(0,2).join("・")+"など":n.join("・");}
+
+function whyText(r, me){
+  var it = r.item, s = "";
+  var hitTypes = it.types.filter(function(ty){return me.typeScore[ty]>0;}).sort(function(a,b){return me.typeScore[b]-me.typeScore[a];});
+  if (hitTypes.length){
+    var strong = me.typeScore[hitTypes[0]]>=2;
+    s += "あなたは"+hitTypes.map(function(t){return "「"+TYPE_WORD[t]+"」";}).join("や")+(strong?"が好きという答えが多く、":"が好きという答えもあり、")+it.work;
+  } else {
+    s += it.work;
+  }
+  s += (r.condOk? COND[me.cond].say(it).replace("の条件も満たしています","の条件（"+COND[me.cond].rule+"）も満たしています") : "なお、あなたが一番大事にしたい「"+COND[me.cond].short+"」の条件（"+COND[me.cond].rule+"）には届いていません。");
+  if (r.cond2Ok) s += "2番目に大事にしたい「"+COND[me.cond2].short+"」の条件（"+COND[me.cond2].rule+"）も満たしています。";
+  var gaps = [];
+  if (!hitTypes.length) gaps.push("好きなこと・得意なこと（第1〜7問）の答えとは重なりが少ないので、中身が合うかは確かめが必要です。");
+  if (r.diff.length){
+    var tx = PREF_TEXT[me.mode];
+    var its = r.diff.map(function(d){return tx[d.it][1];});
+    var mes = r.diff.map(function(d){return "「"+tx[d.me][0]+"」";});
+    gaps.push((r.diff.length===1?its[0]+"で、":its.map(function(x){return "「"+x+"」";}).join("")+"という点で、")+mes.join("")+"というあなたの答えとは違うので、ぴったりとは言えません（ほかの点で近いので並べています）。");
+  }
+  if (r.gradeShort) gaps.push("評定の目安（"+it.grade.toFixed(1)+"）に届いていない可能性があります。");
+  return {main:s, gap:gaps.length?"ただ、"+gaps.join("また、").replace(/^ただ、ただ、/,"ただ、"):""};
+}
+
+function checksFor(r, me, isFirst){
+  var it = r.item, out = [], used = {};
+  var rows = me.mode==="job"?CHECK_JOB:CHECK_SCHOOL;
+  if (me.d10!=="なし"){
+    for (var i=0;i<rows.length;i++){
+      if (rows[i].tags.indexOf(me.d10)>=0 && rows[i].test(it)){
+        out.push({text:rows[i].say(it,me.d10)+(isFirst?"（"+D10_WORD[me.d10]+"で「思っていたのと違った」ことがあるため）":""),diff:false}); used[i]=1; break;
+      }
+    }
+  }
+  if (r.diff.length){
+    var idx = r.diff.map(function(d){return d.i;});
+    for (var k=0;k<DIFF_ORDER.length;k++){ if (idx.indexOf(DIFF_ORDER[k])>=0){ out.push({text:DIFF_CHECK[me.mode][DIFF_ORDER[k]]+"（あなたの答えと違う点）",diff:true}); break; } }
+  }
+  for (var j=0;j<rows.length && out.length<2;j++){
+    if (!used[j] && rows[j].test(it)){ out.push({text:rows[j].say(it,me.d10),diff:false}); used[j]=1; }
+  }
+  return out.slice(0,2);
+}
+
+function meText(me){
+  var vals = Object.keys(me.likeScore).map(function(k){return me.likeScore[k];});
+  var mx = Math.max.apply(null,vals);
+  var tops = Object.keys(me.likeScore).filter(function(k){return me.likeScore[k]===mx;});
+  var s1 = mx>=2 ? "あなたは、"+tops.map(function(t){return "<span class=\"hl\">"+TYPE_WORD[t]+"</span>";}).join("と、")+"が好きな人です。"
+         : mx===1 ? "あなたは、好きなことが"+tops.map(function(t){return TYPE_WORD[t].replace(/こと$/,"");}).join("・")+"と広い人です。"
+         : "好きなことの問では、ピンとくる物が少なめでした。";
+  if (me.tokui) s1 += "得意なのは、<span class=\"hl\">"+TOKUI_WORD[me.tokui]+"</span>。";
+  s1 += "いちばん大事にしたいのは、<span class=\"hl\">"+COND[me.cond].label+"</span>です。";
+  var ph = PREF_PHRASE[me.mode], parts = me.prefs.filter(Boolean);
+  var s2 = "";
+  if (parts.length){
+    s2 = parts.map(function(p,i){ if(i===parts.length-1) return ph[p][1]; var te=ph[p][0]; return te+(/コツコツ$|じっくり$/.test(te)?"":"、"); }).join("")+(me.mode==="job"?"働き方":"学び方")+"が合いそうです。";
+  }
+  return s1+s2;
+}
+/* どの答えからそう読んだか（論点4） */
+function readingWhy(me){
+  var vals = Object.keys(me.likeScore).map(function(k){return me.likeScore[k];});
+  var mx = Math.max.apply(null,vals), parts = [];
+  if (mx>0){
+    var tops = Object.keys(me.likeScore).filter(function(k){return me.likeScore[k]===mx;}).slice(0,2);
+    tops.forEach(function(t){
+      var qs = [];
+      LIKE_IDS.forEach(function(id,n){ var o=qById(id).opts[state.ans[id]]; if(o && o[1]===t) qs.push("第"+(n+1)+"問で「"+o[0]+"」"); });
+      parts.push(qs.slice(0,2).join("、")+(qs.length>2?"など":"")+"を選んだので、"+TYPE_WORD[t]+"が好き");
+    });
+  }
+  if (me.tokui){ var to=qById("t1").opts[state.ans.t1]; parts.push("第7問で「"+to[0]+"」を選んだので、得意なのは"+TOKUI_WORD[me.tokui]); }
+  return parts.length ? "読み取りの理由："+parts.join("。")+"と読みました。" : "";
+}
+/* 自由な一言をAIが読む（論点1のB）。順番には使わない */
+function aiLine(me){
+  var el = $("ai-line"); if (!el) return;
+  var free = (state.ans.f1||"").trim();
+  if (!free){ el.hidden = true; return; }
+  el.hidden = false; el.textContent = "AIがあなたの一言を読んでいます…";
+  var plain = meText(me).replace(/<[^>]+>/g,"");
+  var prompt = "あなたは、高校3年生の進路の自己分析を手伝っています。次の「自己分析の結果」と、本人が自由に書いた「一言」を読み、結果に足す文を1〜2文、全部で80字以内で書いてください。\n"
+    + "・本人の一言から読み取れる好きなことや強みを、やさしい普通の言葉で書く\n・決めつけず「〜かもしれません」くらいの言い方にする\n・会社名・学校名・職業名や、ここに書かれていない事実は書かない\n・前置き・見出し・かぎかっこは付けず、文だけを返す\n\n"
+    + "自己分析の結果：" + plain + "\n本人の一言：" + free.slice(0,300);
+  var off = "（最後の問の自由な一言は、Claudeのアカウントで開いた時だけAIが読みます。今は読んでいません。おすすめの結果は変わりません）";
+  var use = (window.claude && typeof window.claude.use==="function") ? window.claude.use("sample") : Promise.resolve(null);
+  use.then(function(sample){
+    if (!sample){ el.textContent = off; return; }
+    return sample(prompt, {modelTier:"quick"}).then(function(r){ el.innerHTML = "<b>あなたの一言から（AIが読み取り）：</b>"; el.appendChild(document.createTextNode(r.text.trim())); },
+      function(e){ el.textContent = (e && (e.code==="rate_limited"||e.code==="upstream_error")) ? "（今はAIが混んでいて読めませんでした。少しあとで「答えを直す」から結果を出し直してください）" : off; });
+  }).catch(function(){ el.textContent = off; });
+}
+
+/* ---------- 画面 ---------- */
+var state = {mode:"job", ans:{}};
+var $ = function(id){return document.getElementById(id);};
+function show(id){ ["s-start","s-q","s-r"].forEach(function(s){$(s).hidden = (s!==id);}); window.scrollTo(0,0); }
+function qsFor(mode){ return Q.filter(function(q){return !q.schoolOnly || mode==="school";}); }
+
+function renderQuestions(){
+  var mode = state.mode, body = $("q-body"); body.innerHTML = "";
+  $("mode-chip").textContent = mode==="job"?"就職":"指定校推薦";
+  $("q-title").textContent = mode==="job"?"自己分析の14問":"自己分析の14問＋評定";
+  if (state.carried){ var cn=document.createElement("p"); cn.className="note"; cn.textContent="第1〜7問と第14問は、就職でも指定校でも同じ問いなので、前の答えを残しています。第8〜13問は言葉が変わるので、選び直してください。"; body.appendChild(cn); state.carried=false; }
+  var secEls = {};
+  qsFor(mode).forEach(function(q,qi){
+    if (!secEls[q.sec]){ var sec=document.createElement("div"); sec.className="sec"; sec.innerHTML="<h2>"+SECS[q.sec]+"</h2>"; body.appendChild(sec); secEls[q.sec]=sec; }
+    if (q.free){
+      var ff = document.createElement("fieldset");
+      ff.innerHTML = "<legend><span class=\"qn\">第"+(qi+1)+"問</span>"+q.text+"</legend>";
+      var ta = document.createElement("textarea"); ta.id="free-"+mode; ta.name=q.id; ta.rows=2; ta.maxLength=300; ta.className="freebox"; ta.value=state.ans[q.id]||""; ta.placeholder="例：最近、自転車を分解して直すのにハマっている";
+      ff.appendChild(ta);
+      var fn = document.createElement("p"); fn.className="small muted"; fn.textContent="書いた一言は、AI（Claude）に読ませて、結果の「あなたは〜な人です」に1〜2文足すために使います。名前は送りません。Claudeのアカウントで開いている人だけ使えます（それ以外の人は、何も送らず、一言も足されません）。おすすめの順番は変わりません。"; ff.appendChild(fn);
+      secEls[q.sec].appendChild(ff); return;
+    }
+    var opts = q.opts || q[mode].map(function(o){return typeof o==="string"?[o]:o;});
+    var fs = document.createElement("fieldset");
+    var no = "第"+(qi+1)+"問";
+    var topic = (mode==="school"&&q.topicSchool)?q.topicSchool:q.topic;
+    var qtext = (mode==="school"&&q.textSchool)?q.textSchool:q.text;
+    fs.innerHTML = "<legend><span class=\"qn\">"+no+"</span>"+qtext+(topic?"<span class=\"topic\">（"+topic+"）</span>":"")+"</legend>";
+    var box = document.createElement("div"); box.className="opts";
+    opts.forEach(function(o,oi){
+      var id = q.id+"-"+mode+"-"+oi;
+      var lab = document.createElement("label"); lab.className="opt"; lab.setAttribute("for",id);
+      lab.innerHTML = "<input type=\"radio\" name=\""+q.id+"\" id=\""+id+"\" value=\""+oi+"\""+(state.ans[q.id]===oi?" checked":"")+"><span>"+o[0]+"</span>";
+      box.appendChild(lab);
+    });
+    if (q.schoolOnly){ var n=document.createElement("p"); n.className="small muted"; n.textContent="評定は、届かない学校を候補から外すためだけに、この画面の中で使います。保存しません。"; box.appendChild(n); }
+    fs.appendChild(box); secEls[q.sec].appendChild(fs);
+  });
+  updateLeft();
+}
+function updateLeft(){
+  var qs = qsFor(state.mode);
+  qs = qs.filter(function(q){return !q.optional;});
+  var left = qs.filter(function(q){return state.ans[q.id]===undefined;});
+  $("q-submit").disabled = left.length>0;
+  $("q-left").textContent = left.length ? "あと"+left.length+"問（"+qs.length+"問中 "+(qs.length-left.length)+"問 答えた）" : "全部答えました。";
+}
+
+function factsHTML(it, mode){
+  var f = mode==="job"
+    ? [["年間休日",it.holiday+"日"],["初任給（月）",it.salary.replace(/^初任給 /,"").replace(/（.*$/,"")],["残業の目安",it.overtime.replace(/（.*$/,"")],["会社見学",it.visit==="可"?"できる":"できない"],["過去3年",hires(it)+"人入社・"+quits(it)+"人離職"]]
+    : [["推薦に要る評定",it.grade.toFixed(1)+"以上"],["学費（毎年・入学金は別）","約"+it.tuition+"万円"],["所在地",it.place],["オープンキャンパス",hasOC(it)?it.oc.replace(/^あり：/,""):"なし"]];
+  return "<dl class=\"facts\">"+f.map(function(x){return "<div class=\"fact\"><dt>"+x[0]+"</dt><dd>"+x[1]+"</dd></div>";}).join("")+"</dl>";
+}
+
+function breakdown(r, me){
+  var tp = r.item.types.map(function(t){return t+me.typeScore[t];}).join("＋");
+  var pm = r.match.length?"合う："+r.match.map(function(m){return PREF_TEXT[me.mode][m][0];}).join("・"):"合う組なし";
+  var pd = r.diff.length?"／違う："+r.diff.map(function(d){return PREF_TEXT[me.mode][d.me][0];}).join("・"):"";
+  var s = "好きなこと・得意 "+r.t+"点（"+tp+"）＋ 好み "+r.p+"点（"+pm+pd+"）＋ 譲れない条件 "+r.c+"点";
+  if (me.cond2) s += " ＋ 2番目の条件 "+r.c2+"点";
+  if (r.adj) s += " − "+(-r.adj)+"点（条件や評定に届かない）";
+  s += " ＝ "+r.total+"点（"+maxPts(me)+"点満点）。好みは、求人・学校の情報からどちらとも言えない組は比べません。";
+  return s;
+}
+
+function maxPts(me){ return 8+4+2+(me.cond2?1:0); }
+function fbHTML(top1){
+  function rate(id){ return "<div class=\"rate\" role=\"radiogroup\">"+[1,2,3,4,5].map(function(n){return "<label for=\""+id+"-"+n+"\"><input type=\"radio\" name=\""+id+"\" id=\""+id+"-"+n+"\" value=\""+n+"\"><span>"+n+"</span></label>";}).join("")+"</div>"; }
+  return "<div class=\"card fb\"><p class=\"block-t\">この結果、当たってる？（試してくれた人へ）</p>"
+    + "<p class=\"small muted\">5＝とても当たっている、1＝全然当たっていない。2つとも数字を選んでから「送る用の文を作る」を押すと、短い文ができます。名前は入りません（入るのは、選んだ数字・ひとこと・どの問でどれを選んだかの番号だけ）。送るかどうかは自分で決めてください。</p>"
+    + "<div class=\"block\"><p>「あなたは〜な人です」の文</p>"+rate("fb-me")+"</div>"
+    + "<div class=\"block\"><p>1位の「"+top1+"」</p>"+rate("fb-top")+"</div>"
+    + "<div class=\"block\"><label for=\"fb-note\">ひとこと（違うと思った所など。なくてもよい）</label><textarea id=\"fb-note\" rows=\"2\"></textarea></div>"
+    + "<div class=\"row\"><button class=\"btn\" type=\"button\" id=\"fb-make\">送る用の文を作る</button></div>"
+    + "<div class=\"block\" id=\"fb-outbox\" hidden><label for=\"fb-out\">この文をコピーして、このページのリンクを送ってくれた人に、LINEなどで送ってください</label><textarea id=\"fb-out\" rows=\"5\" readonly></textarea>"
+    + "<div class=\"row\"><button class=\"btn primary\" type=\"button\" id=\"fb-copy\">コピーする</button><span class=\"small muted\" id=\"fb-msg\"></span></div></div></div>";
+}
+function bindFb(mode, top1){
+  function pick(n){ var e=document.querySelector('input[name="'+n+'"]:checked'); return e?e.value:""; }
+  function make(){
+    var ansStr = qsFor(mode).filter(function(q){return !q.free;}).map(function(q){return q.id+"="+state.ans[q.id];}).join(",");
+    $("fb-out").value = "【進路の相性しらべ 感想 v3】\n結果の文："+pick("fb-me")+"／5\n1位（"+top1+"）："+pick("fb-top")+"／5\nひとこと："+($("fb-note").value.trim()||"なし")+"\n答えの番号："+(mode==="job"?"就職":"指定校")+" "+ansStr;
+  }
+  $("fb-make").onclick = function(){
+    if (!pick("fb-me") || !pick("fb-top")){ $("fb-outbox").hidden = true; alertMsg("2つとも、1〜5の数字を選んでください"); return; }
+    alertMsg(""); make(); $("fb-outbox").hidden = false;
+  };
+  function alertMsg(m){ var e=$("fb-warn"); if(!e){ e=document.createElement("span"); e.id="fb-warn"; e.className="small"; e.style.color="var(--warn)"; $("fb-make").parentNode.appendChild(e); } e.textContent=m; }
+  document.querySelectorAll(".fb input, .fb textarea#fb-note").forEach(function(el){ el.addEventListener("input", function(){ if(!$("fb-outbox").hidden && pick("fb-me") && pick("fb-top")) make(); }); el.addEventListener("change", function(){ if(!$("fb-outbox").hidden && pick("fb-me") && pick("fb-top")) make(); }); });
+  $("fb-copy").onclick = function(){
+    var t=$("fb-out");
+    try { navigator.clipboard.writeText(t.value).then(function(){ $("fb-msg").textContent="コピーしました"; }, function(){ t.select(); $("fb-msg").textContent="文を選びました。長押しか Ctrl+C でコピーしてください"; }); }
+    catch(_) { t.select(); $("fb-msg").textContent="文を選びました。長押しか Ctrl+C でコピーしてください"; }
+  };
+}
+
+function renderResult(){
+  var me = analyze(state.mode, state.ans), res = recommend(me), mode = state.mode;
+  var el = $("s-r"), h = "";
+  h += "<div class=\"qhead\"><p><span class=\"chip\">"+(mode==="job"?"就職":"指定校推薦")+"</span></p><h1>あなたに合いそうな"+(mode==="job"?"求人":"指定校")+"</h1></div>";
+  var ansList = qsFor(mode).map(function(q,qi){ if (q.free) return "<li>第"+(qi+1)+"問："+((state.ans.f1||"").trim()?escapeHTML(state.ans.f1.trim()):"（書いていない）")+"</li>"; var o=(q.opts||q[mode])[state.ans[q.id]]; return "<li>第"+(qi+1)+"問："+(typeof o==="string"?o:o[0])+"</li>"; }).join("");
+  var why1 = readingWhy(me);
+  h += "<div class=\"me\"><p class=\"eyebrow\">あなたの結果</p><p class=\"big\">"+meText(me)+"</p>"
+     + (why1 ? "<p class=\"small muted\">"+why1+"</p>" : "")
+     + "<p class=\"ailine\" id=\"ai-line\" hidden></p>"
+     + (res.prefNote ? "<p class=\"note\">"+res.prefNote+"</p>" : "")
+     + "<p class=\"small muted\">下の3件は、この答えに点数（相性の点：答えと重なるほど高い）で近い順です。答えと合わない点がある時は、それぞれに書いています。</p>"
+     + "<details><summary>答えた内容を見る</summary><ul class=\"small\">"+ansList+"</ul></details></div>";
+  res.top.forEach(function(r,i){
+    var w = whyText(r,me), cs = checksFor(r,me,i===0), it = r.item;
+    h += "<article class=\"card\">";
+    h += "<div class=\"card-head\"><div><h3><span class=\"rank\">"+(i+1)+".</span>"+it.name+"</h3><p class=\"small muted\">"+(mode==="job"?it.role:it.dept)+"／"+it.place+"</p></div><span class=\"pts num\"><span class=\"small\">相性 </span>"+r.total+"点<span class=\"small\">／"+maxPts(me)+"</span></span></div>";
+    h += factsHTML(it,mode);
+    h += "<div class=\"block why\"><p class=\"block-t\">なぜ合うか</p><p>"+w.main+(w.gap?" <span class=\"gap\">"+w.gap+"</span>":"")+"</p></div>";
+    h += "<div class=\"block\"><p class=\"block-t\">入る前に確かめておくこと</p><ol class=\"check\">"+cs.map(function(c){return "<li"+(c.diff?" class=\"diff\"":"")+">"+c.text+"</li>";}).join("")+"</ol></div>";
+    h += "<details><summary>点の内訳</summary><p class=\"num\">"+breakdown(r,me)+"</p></details>";
+    h += "</article>";
+  });
+  if (res.others.length){
+    h += "<div class=\"others\"><p class=\"block-t\">ほかの候補</p><p>"+res.others.map(function(r){return r.item.name+" <span class=\"muted num\">"+r.total+"点</span>";}).join("　／　")+"</p><p class=\"small muted\">同じ点の時は、合わない点が少ない方を上にしています（並べ方は下に）。</p></div>";
+  }
+  res.notes.forEach(function(n){ h += "<p class=\"note\">"+n+"</p>"; });
+  var top1 = res.top[0].item.name.replace("（架空）","");
+  h += fbHTML(top1);
+  h += "<p class=\"small muted\">同じ点の時は、合わない点が少ない方を上にし、それも同じなら"+(mode==="job"?"過去3年に入った人のうち、やめた人の割合が低い方":"オープンキャンパスがある方、それも同じなら学費が安い方")+"を上にしています。</p>";
+  h += "<div class=\"row\"><button class=\"btn primary\" type=\"button\" id=\"r-edit\">答えを直す</button><button class=\"btn\" type=\"button\" id=\"r-other\">"+(mode==="job"?"指定校推薦":"就職")+"でも試す</button><button class=\"btn link\" type=\"button\" id=\"r-home\">最初に戻る</button></div>";
+  el.innerHTML = h;
+  $("r-edit").onclick = function(){ renderQuestions(); show("s-q"); };
+  $("r-other").onclick = function(){ state.mode = mode==="job"?"school":"job"; var keep={}; LIKE_IDS.concat(["t1","q10","f1"]).forEach(function(k){ if(state.ans[k]!==undefined) keep[k]=state.ans[k]; }); state.ans=keep; state.carried=true; renderQuestions(); show("s-q"); };
+  $("r-home").onclick = function(){ show("s-start"); };
+  bindFb(mode, top1);
+  aiLine(me);
+  show("s-r");
+}
+
+/* 架空の生徒（判断シート5枚目のAさん・03の案のBさん） */
+var DEMO = {
+  a:{mode:"job",ans:{l1:0,l2:2,l3:0,l4:0,l5:2,l6:2,t1:5,q5:0,q6:0,q7:1,q8:0,q9:1,q9b:2,q10:0}},
+  b:{mode:"school",ans:{l1:1,l2:0,l3:2,l4:1,l5:0,l6:1,t1:3,q5:1,q6:1,q7:0,q8:1,q9:0,q9b:2,q10:2,q11:1}}
+};
+
+$("go-job").onclick = function(){ state = {mode:"job",ans:{}}; renderQuestions(); show("s-q"); };
+$("go-school").onclick = function(){ state = {mode:"school",ans:{}}; renderQuestions(); show("s-q"); };
+$("demo-a").onclick = function(){ state = {mode:DEMO.a.mode,ans:Object.assign({},DEMO.a.ans)}; renderResult(); };
+$("demo-b").onclick = function(){ state = {mode:DEMO.b.mode,ans:Object.assign({},DEMO.b.ans)}; renderResult(); };
+$("q-back").onclick = function(){ show("s-start"); };
+function escapeHTML(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];}); }
+function onAns(e){ var n=e.target.name; if (!n) return; if (n==="f1"){ state.ans.f1 = e.target.value; return; } if (e.type==="change"){ state.ans[n] = Number(e.target.value); updateLeft(); } }
+$("qform").addEventListener("change", onAns);
+$("qform").addEventListener("input", onAns);
+$("qform").addEventListener("submit", function(e){ e.preventDefault(); if (!$("q-submit").disabled) renderResult(); });
+
+window.__rec = {analyze:analyze, recommend:recommend, whyText:whyText, checksFor:checksFor, meText:meText, DEMO:DEMO, Q:Q};
+})();
+</script>
